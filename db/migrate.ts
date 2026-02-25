@@ -15,7 +15,7 @@ async function migrate() {
   const url = process.env.DATABASE_URL;
   if (!url) { console.error('❌ DATABASE_URL not set'); process.exit(1); }
 
-  const client = new pg.Client({ connectionString: url, ssl: url.includes('railway') ? { rejectUnauthorized: false } : false });
+  const client = new pg.Client({ connectionString: url, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
 
   try {
     await client.connect();
