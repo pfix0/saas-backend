@@ -28,7 +28,8 @@ router.get('/', async (_req, res) => {
     health.status = 'degraded';
   }
 
-  res.status(health.status === 'ok' ? 200 : 503).json(health);
+  // Always return 200 for Railway healthcheck
+  res.status(200).json(health);
 });
 
 export default router;

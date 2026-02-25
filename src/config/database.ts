@@ -8,14 +8,21 @@ import 'dotenv/config';
 const { Pool } = pg;
 
 // Railway provides DATABASE_URL automatically
+// Also check DATABASE_PRIVATE_URL for internal connections
+const connectionString = process.env.DATABASE_URL || process.env.DATABASE_PRIVATE_URL;
+
+if (!connectionString) {
+  console.warn('⚠️  DATABASE_URL not set — database features will be unavailable');
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString || 'postgresql://localhost:5432/saas_db',
   ssl: process.env.NODE_ENV === 'production' 
     ? { rejectUnauthorized: false } 
     : false,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000,
 });
 
 // Log connection
