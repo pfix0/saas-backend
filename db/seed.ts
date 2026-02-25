@@ -11,7 +11,10 @@ async function seed() {
   const url = process.env.DATABASE_URL;
   if (!url) { console.error('❌ DATABASE_URL not set'); process.exit(1); }
 
-  const client = new pg.Client({ connectionString: url, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false });
+  const client = new pg.Client({ 
+    connectionString: url, 
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false 
+  });
 
   try {
     await client.connect();
@@ -30,7 +33,7 @@ async function seed() {
     await client.query(
       `INSERT INTO merchants (tenant_id, name, email, phone, password_hash, role, status)
        VALUES ($1, 'محمد أحمد', 'admin@saas.qa', '+97433000001', $2, 'owner', 'active')
-       ON CONFLICT (email, tenant_id) DO NOTHING`,
+       ON CONFLICT DO NOTHING`,
       [tenantId, passwordHash]
     );
     console.log('✅ Merchant: admin@saas.qa / password123');
@@ -61,7 +64,8 @@ async function seed() {
     console.log(`✅ ${products.length} Products`);
     console.log('\n🎉 Seed complete!');
   } catch (err: any) {
-    console.error('❌ Failed:', err.message); process.exit(1);
+    console.error('❌ Seed error:', err.message);
+    // Don't exit with error - let the server start anyway
   } finally {
     await client.end();
   }

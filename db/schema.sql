@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS tenants (
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_tenants_slug ON tenants(slug);
-CREATE INDEX idx_tenants_domain ON tenants(domain) WHERE domain IS NOT NULL;
-CREATE INDEX idx_tenants_status ON tenants(status);
+CREATE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug);
+CREATE INDEX IF NOT EXISTS idx_tenants_domain ON tenants(domain) WHERE domain IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants(status);
 
 -- ═══════════════════════════════════════
 -- 2. MERCHANTS (التجار / المستخدمون)
@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS merchants (
   UNIQUE(email, tenant_id)
 );
 
-CREATE INDEX idx_merchants_tenant ON merchants(tenant_id);
-CREATE INDEX idx_merchants_email ON merchants(email);
+CREATE INDEX IF NOT EXISTS idx_merchants_tenant ON merchants(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_merchants_email ON merchants(email);
 
 -- ═══════════════════════════════════════
 -- 3. CATEGORIES (التصنيفات)
@@ -86,9 +86,9 @@ CREATE TABLE IF NOT EXISTS categories (
   UNIQUE(slug, tenant_id)
 );
 
-CREATE INDEX idx_categories_tenant ON categories(tenant_id);
-CREATE INDEX idx_categories_parent ON categories(parent_id);
-CREATE INDEX idx_categories_slug ON categories(tenant_id, slug);
+CREATE INDEX IF NOT EXISTS idx_categories_tenant ON categories(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_id);
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(tenant_id, slug);
 
 -- ═══════════════════════════════════════
 -- 4. PRODUCTS (المنتجات)
@@ -122,12 +122,12 @@ CREATE TABLE IF NOT EXISTS products (
   UNIQUE(slug, tenant_id)
 );
 
-CREATE INDEX idx_products_tenant ON products(tenant_id);
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_products_status ON products(tenant_id, status);
-CREATE INDEX idx_products_featured ON products(tenant_id, is_featured) WHERE is_featured = TRUE;
-CREATE INDEX idx_products_slug ON products(tenant_id, slug);
-CREATE INDEX idx_products_search ON products USING gin(to_tsvector('arabic', name || ' ' || COALESCE(description, '')));
+CREATE INDEX IF NOT EXISTS idx_products_tenant ON products(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products(tenant_id, is_featured) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_products_slug ON products(tenant_id, slug);
+CREATE INDEX IF NOT EXISTS idx_products_search ON products USING gin(to_tsvector('arabic', name || ' ' || COALESCE(description, '')));
 
 -- ═══════════════════════════════════════
 -- 5. PRODUCT IMAGES (صور المنتجات)
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS product_images (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_product_images_product ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
 
 -- ═══════════════════════════════════════
 -- 6. PRODUCT OPTIONS (خيارات المنتج - لون/مقاس)
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS product_options (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_product_options_product ON product_options(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_options_product ON product_options(product_id);
 
 -- ═══════════════════════════════════════
 -- 7. PRODUCT VARIANTS (متغيرات المنتج)
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_product_variants_product ON product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
 
 -- ═══════════════════════════════════════
 -- 8. CUSTOMERS (العملاء)
@@ -203,9 +203,9 @@ CREATE TABLE IF NOT EXISTS customers (
   UNIQUE(phone, tenant_id)
 );
 
-CREATE INDEX idx_customers_tenant ON customers(tenant_id);
-CREATE INDEX idx_customers_phone ON customers(tenant_id, phone);
-CREATE INDEX idx_customers_email ON customers(tenant_id, email) WHERE email IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_customers_tenant ON customers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(tenant_id, phone);
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(tenant_id, email) WHERE email IS NOT NULL;
 
 -- ═══════════════════════════════════════
 -- 9. ADDRESSES (عناوين العملاء)
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS addresses (
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_addresses_customer ON addresses(customer_id);
+CREATE INDEX IF NOT EXISTS idx_addresses_customer ON addresses(customer_id);
 
 -- ═══════════════════════════════════════
 -- 10. ORDERS (الطلبات)
@@ -275,12 +275,12 @@ CREATE TABLE IF NOT EXISTS orders (
   UNIQUE(order_number, tenant_id)
 );
 
-CREATE INDEX idx_orders_tenant ON orders(tenant_id);
-CREATE INDEX idx_orders_customer ON orders(customer_id);
-CREATE INDEX idx_orders_status ON orders(tenant_id, status);
-CREATE INDEX idx_orders_payment ON orders(tenant_id, payment_status);
-CREATE INDEX idx_orders_number ON orders(tenant_id, order_number);
-CREATE INDEX idx_orders_created ON orders(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_tenant ON orders(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_orders_payment ON orders(tenant_id, payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(tenant_id, order_number);
+CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(tenant_id, created_at DESC);
 
 -- ═══════════════════════════════════════
 -- 11. ORDER ITEMS (عناصر الطلب)
@@ -304,8 +304,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_order_items_order ON order_items(order_id);
-CREATE INDEX idx_order_items_product ON order_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
 
 -- ═══════════════════════════════════════
 -- 12. ORDER STATUS HISTORY (تاريخ حالات الطلب)
@@ -319,7 +319,7 @@ CREATE TABLE IF NOT EXISTS order_status_history (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_order_status_order ON order_status_history(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_order ON order_status_history(order_id);
 
 -- ═══════════════════════════════════════
 -- 13. PAYMENTS (المعاملات المالية)
@@ -342,10 +342,10 @@ CREATE TABLE IF NOT EXISTS payments (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_payments_tenant ON payments(tenant_id);
-CREATE INDEX idx_payments_order ON payments(order_id);
-CREATE INDEX idx_payments_status ON payments(tenant_id, status);
-CREATE INDEX idx_payments_transaction ON payments(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_payments_tenant ON payments(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_payments_transaction ON payments(transaction_id);
 
 -- ═══════════════════════════════════════
 -- 14. SHIPMENTS (الشحنات)
@@ -370,9 +370,9 @@ CREATE TABLE IF NOT EXISTS shipments (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_shipments_tenant ON shipments(tenant_id);
-CREATE INDEX idx_shipments_order ON shipments(order_id);
-CREATE INDEX idx_shipments_tracking ON shipments(tracking_number);
+CREATE INDEX IF NOT EXISTS idx_shipments_tenant ON shipments(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_order ON shipments(order_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_tracking ON shipments(tracking_number);
 
 -- ═══════════════════════════════════════
 -- 15. COUPONS (كوبونات الخصم)
@@ -402,8 +402,8 @@ CREATE TABLE IF NOT EXISTS coupons (
   UNIQUE(code, tenant_id)
 );
 
-CREATE INDEX idx_coupons_tenant ON coupons(tenant_id);
-CREATE INDEX idx_coupons_code ON coupons(tenant_id, code);
+CREATE INDEX IF NOT EXISTS idx_coupons_tenant ON coupons(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(tenant_id, code);
 
 -- ═══════════════════════════════════════
 -- 16. PAGES (الصفحات الثابتة)
@@ -424,7 +424,7 @@ CREATE TABLE IF NOT EXISTS pages (
   UNIQUE(slug, tenant_id)
 );
 
-CREATE INDEX idx_pages_tenant ON pages(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_pages_tenant ON pages(tenant_id);
 
 -- ═══════════════════════════════════════
 -- 17. STORE SETTINGS (إعدادات المتجر)
@@ -440,7 +440,7 @@ CREATE TABLE IF NOT EXISTS store_settings (
   UNIQUE(tenant_id, key)
 );
 
-CREATE INDEX idx_store_settings_tenant ON store_settings(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_store_settings_tenant ON store_settings(tenant_id);
 
 -- ═══════════════════════════════════════
 -- 18. REVIEWS (التقييمات)
@@ -457,8 +457,8 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_reviews_product ON reviews(product_id);
-CREATE INDEX idx_reviews_tenant ON reviews(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_tenant ON reviews(tenant_id);
 
 -- ═══════════════════════════════════════
 -- 19. WISHLIST (المفضلة)
@@ -472,7 +472,7 @@ CREATE TABLE IF NOT EXISTS wishlist (
   UNIQUE(customer_id, product_id)
 );
 
-CREATE INDEX idx_wishlist_customer ON wishlist(customer_id);
+CREATE INDEX IF NOT EXISTS idx_wishlist_customer ON wishlist(customer_id);
 
 -- ═══════════════════════════════════════
 -- 20. OTP CODES (رموز التحقق)
@@ -489,7 +489,7 @@ CREATE TABLE IF NOT EXISTS otp_codes (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_otp_phone ON otp_codes(phone, is_used);
+CREATE INDEX IF NOT EXISTS idx_otp_phone ON otp_codes(phone, is_used);
 
 -- ═══════════════════════════════════════
 -- UPDATED_AT TRIGGER (تحديث تلقائي)
