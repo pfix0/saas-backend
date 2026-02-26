@@ -18,6 +18,8 @@ import customerRoutes from './routes/customers.js';
 import storeRoutes from './routes/store.js';
 import customerAccountRoutes from './routes/customer-account.js';
 import adminRoutes from './routes/admin.js';
+import couponRoutes from './routes/coupons.js';
+import settingsRoutes from './routes/settings.js';
 import healthRoutes from './routes/health.js';
 
 const app = express();
@@ -50,6 +52,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/store', customerAccountRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ═══ 404 Handler ═══
