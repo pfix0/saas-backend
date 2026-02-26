@@ -81,15 +81,60 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
+// ═══ Run Migrations ═══
+async function runMigrations() {
+  try {
+    // Create migrations tracking table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS _migrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        run_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    const fs = await import('fs');
+    const path = await import('path');
+    const migrationsDir = path.resolve(process.cwd(), 'migrations');
+    
+    if (!fs.existsSync(migrationsDir)) {
+      console.log('📁 No migrations directory found');
+      return;
+    }
+
+    const files = fs.readdirSync(migrationsDir)
+      .filter((f: string) => f.endsWith('.sql'))
+      .sort();
+
+    for (const file of files) {
+      const existing = await pool.query(
+        'SELECT id FROM _migrations WHERE name = $1', [file]
+      );
+      if (existing.rows.length > 0) continue;
+
+      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+      await pool.query(sql);
+      await pool.query(
+        'INSERT INTO _migrations (name) VALUES ($1)', [file]
+      );
+      console.log(`✅ Migration: ${file}`);
+    }
+  } catch (err: any) {
+    console.error('⚠️ Migration error:', err.message);
+  }
+}
+
 // ═══ Start Server ═══
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('');
-  console.log('  ╔══════════════════════════════════╗');
-  console.log('  ║   ساس — Backend API Server       ║');
-  console.log(`  ║   Port: ${PORT}                      ║`);
-  console.log(`  ║   Env:  ${process.env.NODE_ENV || 'development'}              ║`);
-  console.log('  ╚══════════════════════════════════╝');
-  console.log('');
+runMigrations().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('');
+    console.log('  ╔══════════════════════════════════╗');
+    console.log('  ║   ساس — Backend API Server       ║');
+    console.log(`  ║   Port: ${PORT}                      ║`);
+    console.log(`  ║   Env:  ${process.env.NODE_ENV || 'development'}              ║`);
+    console.log('  ╚══════════════════════════════════╝');
+    console.log('');
+  });
 });
 
 // Graceful shutdown
