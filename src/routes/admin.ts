@@ -60,6 +60,10 @@ async function ensureTables() {
     );
   `);
 
+  // Migrate old role values
+  await query(`UPDATE platform_admins SET role = 'founder' WHERE role = 'super_admin'`).catch(() => {});
+  await query(`UPDATE platform_admins SET role = 'director' WHERE role = 'admin'`).catch(() => {});
+
   // Add role constraint with new values
   await query(`
     DO $$ BEGIN
