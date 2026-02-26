@@ -22,6 +22,8 @@ import couponRoutes from './routes/coupons.js';
 import settingsRoutes from './routes/settings.js';
 import financeRoutes from './routes/finance.js';
 import healthRoutes from './routes/health.js';
+import reviewRoutes from './routes/reviews.js';
+import pageRoutes from './routes/pages.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4000');
@@ -56,6 +58,8 @@ app.use('/api/store', customerAccountRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/pages', pageRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ═══ 404 Handler ═══

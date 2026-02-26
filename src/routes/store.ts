@@ -578,4 +578,235 @@ router.get('/:slug/order/:orderNumber', async (req, res) => {
   }
 });
 
+
+// ═══════════════════════════════════════
+// *** محادثة ٨: البحث + التقييمات + المفضلة + الصفحات ***
+// ═══════════════════════════════════════
+
+// GET /api/store/:slug/search — بحث سريع مع اقتراحات
+router.get('/:slug/search', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const { q = '', limit = '6' } = req.query;
+    if (!q || String(q).trim().length < 2) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const products = await query(
+      `SELECT p.id, p.name, p.slug, p.price, p.sale_price,
+              (SELECT url FROM product_images WHERE product_id = p.id AND is_main = true LIMIT 1) as image
+       FROM products p
+       WHERE p.tenant_id = $1 AND p.status = 'active'
+         AND (p.name ILIKE $2 OR p.description ILIKE $2 OR p.sku ILIKE $2)
+       ORDER BY p.sales_count DESC, p.name ASC
+       LIMIT $3`,
+      [tenant.id, `%${q}%`, Math.min(parseInt(limit as string), 10)]
+    );
+
+    res.json({ success: true, data: products });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/store/:slug/products/:productSlug/reviews — تقييمات المنتج
+router.get('/:slug/products/:productSlug/reviews', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const product = await queryOne(
+      'SELECT id FROM products WHERE tenant_id = $1 AND slug = $2',
+      [tenant.id, req.params.productSlug]
+    );
+    if (!product) return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+
+    const { page = '1', limit = '10' } = req.query;
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    const reviews = await query(
+      `SELECT id, customer_name, rating, comment, created_at
+       FROM reviews WHERE product_id = $1 AND status = 'approved'
+       ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [product.id, parseInt(limit as string), offset]
+    );
+
+    const stats = await queryOne(
+      `SELECT COUNT(*)::int as total, COALESCE(AVG(rating), 0) as avg_rating,
+              COUNT(CASE WHEN rating = 5 THEN 1 END)::int as r5,
+              COUNT(CASE WHEN rating = 4 THEN 1 END)::int as r4,
+              COUNT(CASE WHEN rating = 3 THEN 1 END)::int as r3,
+              COUNT(CASE WHEN rating = 2 THEN 1 END)::int as r2,
+              COUNT(CASE WHEN rating = 1 THEN 1 END)::int as r1
+       FROM reviews WHERE product_id = $1 AND status = 'approved'`,
+      [product.id]
+    );
+
+    res.json({
+      success: true,
+      data: { reviews, stats: { ...stats, avg_rating: parseFloat(parseFloat(stats.avg_rating).toFixed(1)) } },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/store/:slug/products/:productSlug/reviews — إضافة تقييم
+router.post('/:slug/products/:productSlug/reviews', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const product = await queryOne(
+      'SELECT id FROM products WHERE tenant_id = $1 AND slug = $2',
+      [tenant.id, req.params.productSlug]
+    );
+    if (!product) return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+
+    const { customer_name, rating, comment, customer_id } = req.body;
+    if (!customer_name || !rating) {
+      return res.status(400).json({ success: false, error: 'الاسم والتقييم مطلوبين' });
+    }
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, error: 'التقييم بين ١ و ٥' });
+    }
+
+    const review = await insert('reviews', {
+      tenant_id: tenant.id,
+      product_id: product.id,
+      customer_id: customer_id || null,
+      customer_name,
+      rating: parseInt(rating),
+      comment: comment || null,
+      status: 'approved',
+    });
+
+    // Update product avg_rating + review_count
+    const avgRes = await queryOne(
+      `SELECT COALESCE(AVG(rating), 0) as avg, COUNT(*)::int as cnt
+       FROM reviews WHERE product_id = $1 AND status = 'approved'`,
+      [product.id]
+    );
+    await query(
+      'UPDATE products SET avg_rating = $1, review_count = $2 WHERE id = $3',
+      [parseFloat(parseFloat(avgRes.avg).toFixed(1)), avgRes.cnt, product.id]
+    );
+
+    res.status(201).json({ success: true, data: review, message: 'شكراً لتقييمك!' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/store/:slug/wishlist — تبديل المفضلة (toggle)
+router.post('/:slug/wishlist', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const { customer_id, product_id } = req.body;
+    if (!customer_id || !product_id) {
+      return res.status(400).json({ success: false, error: 'بيانات ناقصة' });
+    }
+
+    const existing = await queryOne(
+      'SELECT id FROM wishlists WHERE customer_id = $1 AND product_id = $2',
+      [customer_id, product_id]
+    );
+
+    if (existing) {
+      await query('DELETE FROM wishlists WHERE id = $1', [existing.id]);
+      res.json({ success: true, action: 'removed', message: 'تم الإزالة من المفضلة' });
+    } else {
+      await insert('wishlists', { tenant_id: tenant.id, customer_id, product_id });
+      res.json({ success: true, action: 'added', message: 'تمت الإضافة للمفضلة' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/store/:slug/wishlist/:customerId — قائمة المفضلة
+router.get('/:slug/wishlist/:customerId', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const items = await query(
+      `SELECT w.id, w.product_id, w.created_at,
+              p.name, p.slug, p.price, p.sale_price, p.status as product_status,
+              (SELECT url FROM product_images WHERE product_id = p.id AND is_main = true LIMIT 1) as image
+       FROM wishlists w
+       JOIN products p ON p.id = w.product_id
+       WHERE w.customer_id = $1 AND w.tenant_id = $2
+       ORDER BY w.created_at DESC`,
+      [req.params.customerId, tenant.id]
+    );
+
+    res.json({ success: true, data: items });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/store/:slug/pages — صفحات المتجر الثابتة
+router.get('/:slug/pages', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const pages = await query(
+      `SELECT id, title, slug, content, sort_order FROM pages
+       WHERE tenant_id = $1 AND status = 'published'
+       ORDER BY sort_order ASC, created_at ASC`,
+      [tenant.id]
+    );
+    res.json({ success: true, data: pages });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/store/:slug/pages/:pageSlug — صفحة واحدة
+router.get('/:slug/pages/:pageSlug', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      'SELECT id FROM tenants WHERE slug = $1 AND status != \'suspended\'',
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    const page = await queryOne(
+      `SELECT id, title, slug, content, created_at, updated_at FROM pages
+       WHERE tenant_id = $1 AND slug = $2 AND status = 'published'`,
+      [tenant.id, req.params.pageSlug]
+    );
+    if (!page) return res.status(404).json({ success: false, error: 'الصفحة غير موجودة' });
+
+    res.json({ success: true, data: page });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
