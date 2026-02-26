@@ -378,6 +378,13 @@ SELECT * FROM products WHERE tenant_id = $1;
 
 ## 📝 سجل التحديثات
 
+### المحادثة ٦ — إدارة الطلبات 📋 (فبراير ٢٠٢٦)
+- ✅ GET /api/orders/stats — ملخص إحصائي (اليوم، إجمالي، حسب الحالة)
+- ✅ GET /api/orders — بحث (رقم/اسم/جوال) + فلتر تاريخ + ترتيب
+- ✅ PUT /api/orders/:id/notes — ملاحظات التاجر
+- ✅ PUT /api/orders/:id/payment — تحديث حالة الدفع
+- ✅ Auto: COD → paid عند التوصيل
+
 ### المحادثة ٥ — السلة + Checkout 🛒 (فبراير ٢٠٢٦)
 - ✅ POST /api/store/:slug/checkout — إنشاء طلب (ضيف/مسجل)
 - ✅ التحقق من المنتجات والكميات + تحديث المخزون
