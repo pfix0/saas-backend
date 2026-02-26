@@ -12,8 +12,8 @@ const router = Router();
 router.get('/:slug', async (req, res) => {
   try {
     const tenant = await queryOne(
-      `SELECT id, name, slug, logo_url, description, currency, language, theme, theme_config, meta
-       FROM tenants WHERE slug = $1 AND status = 'active'`,
+      `SELECT id, name, slug, logo_url, description, currency, language, theme, theme_config, meta, status
+       FROM tenants WHERE slug = $1 AND status != 'suspended'`,
       [req.params.slug]
     );
     if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
@@ -32,7 +32,7 @@ router.get('/:slug', async (req, res) => {
 // GET /api/store/:slug/products
 router.get('/:slug/products', async (req, res) => {
   try {
-    const tenant = await queryOne('SELECT id FROM tenants WHERE slug = $1 AND status = \'active\'', [req.params.slug]);
+    const tenant = await queryOne(`SELECT id FROM tenants WHERE slug = $1 AND status != 'suspended'`, [req.params.slug]);
     if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
 
     const { page = '1', limit = '20', category, sort = 'created_at', search } = req.query;
@@ -73,7 +73,7 @@ router.get('/:slug/products', async (req, res) => {
 // GET /api/store/:slug/categories
 router.get('/:slug/categories', async (req, res) => {
   try {
-    const tenant = await queryOne('SELECT id FROM tenants WHERE slug = $1 AND status = \'active\'', [req.params.slug]);
+    const tenant = await queryOne(`SELECT id FROM tenants WHERE slug = $1 AND status != 'suspended'`, [req.params.slug]);
     if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
 
     const categories = await query(
@@ -91,7 +91,7 @@ router.get('/:slug/categories', async (req, res) => {
 // GET /api/store/:slug/products/:productSlug
 router.get('/:slug/products/:productSlug', async (req, res) => {
   try {
-    const tenant = await queryOne('SELECT id FROM tenants WHERE slug = $1 AND status = \'active\'', [req.params.slug]);
+    const tenant = await queryOne(`SELECT id FROM tenants WHERE slug = $1 AND status != 'suspended'`, [req.params.slug]);
     if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
 
     const product = await queryOne(
