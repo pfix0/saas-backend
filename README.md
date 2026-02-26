@@ -378,6 +378,19 @@ SELECT * FROM products WHERE tenant_id = $1;
 
 ## 📝 سجل التحديثات
 
+### المحادثة ٨ — الكوبونات + الإعدادات 🎟️ (فبراير ٢٠٢٦)
+- ✅ CRUD /api/coupons — إنشاء/عرض/تعديل/حذف كوبونات
+- ✅ GET /api/coupons/stats — إحصائيات (عدد، نشط، خصومات، أكثر استخداماً)
+- ✅ بحث + فلتر (active/expired/used_up/inactive) + ترتيب
+- ✅ PUT /api/coupons/:id/toggle — تفعيل/تعطيل
+- ✅ GET /api/settings — جميع إعدادات المتجر
+- ✅ PUT /api/settings/store — بيانات المتجر (اسم، وصف، عملة)
+- ✅ PUT /api/settings/payment — الدفع (COD، بنكي، SkyPay، سداد)
+- ✅ PUT /api/settings/shipping — الشحن (Aramex، DHL، استلام، مجاني)
+- ✅ PUT /api/settings/notifications — الإشعارات
+- ✅ PUT /api/settings/social — روابط التواصل
+- ✅ PUT /api/settings/checkout — إعدادات الطلب
+
 ### المحادثة ٧ — إدارة العملاء + حساب المستهلك 👥 (فبراير ٢٠٢٦)
 - ✅ GET /api/customers/stats + بحث + ترتيب + تفاصيل + عناوين
 - ✅ PUT /api/customers/:id — تحديث + ملاحظات + حظر/إلغاء
@@ -443,10 +456,13 @@ SELECT * FROM products WHERE tenant_id = $1;
 | 1 | إعداد المشروع + قاعدة البيانات + API هيكل | ✅ مكتمل |
 | 2 | نظام المصادقة (register/login/JWT) | ✅ مكتمل |
 | 3 | لوحة التحكم + إدارة المنتجات | ✅ مكتمل |
-| 4 | واجهة المتجر (Storefront) | 🔜 التالي |
-| 5-8 | السلة + Checkout + الطلبات + العملاء | ⏳ قادم |
-| 9-11 | الدفع (SADAD/SkipCash) + الشحن (Aramex/DHL) | ⏳ قادم |
-| 12-15 | تقارير + تسويق + إعدادات + ثيمات | ⏳ قادم |
+| 4 | واجهة المتجر (Storefront) | ✅ مكتمل |
+| 5 | السلة + Checkout | ✅ مكتمل |
+| 6 | إدارة الطلبات | ✅ مكتمل |
+| 7 | إدارة العملاء + حساب المستهلك | ✅ مكتمل |
+| 8 | الكوبونات + إعدادات المتجر | ✅ مكتمل |
+| 9-11 | الدفع (SADAD/SkyPay) + الشحن (Aramex/DHL) | 🔜 التالي |
+| 12-15 | تقارير + تسويق متقدم + ثيمات | ⏳ قادم |
 | 16-18 | الأمان + النشر النهائي + Landing Page | ⏳ قادم |
 
 ## ⚙️ أوامر مفيدة
