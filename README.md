@@ -375,6 +375,16 @@ SELECT * FROM products WHERE tenant_id = $1;
 
 ## 📝 سجل التحديثات
 
+### المحادثة ٣ب — لوحة تحكم المنصة 🛡️ (فبراير ٢٠٢٦)
+- ✅ جدول platform_admins (auto-created + auto-migrated)
+- ✅ ٦ أدوار: founder, director, supervisor, support, accountant, employee
+- ✅ RBAC middleware: requirePlatformAdmin + requireRoles
+- ✅ POST /api/admin/auth/setup + login + me
+- ✅ GET /api/admin/stats (مالية إضافية حسب الدور)
+- ✅ CRUD /api/admin/tenants + status + plan
+- ✅ GET /api/admin/merchants
+- ✅ CRUD /api/admin/staff (إدارة طاقم المنصة)
+
 ### المحادثة ٣ — لوحة التحكم + المنتجات 📦 (فبراير ٢٠٢٦)
 - ✅ Frontend: Sidebar + Topbar تفاعلي
 - ✅ Frontend: لوحة تحكم ديناميكية مربوطة بالـ API
