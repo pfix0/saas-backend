@@ -425,4 +425,85 @@ router.delete('/staff/:id', requirePlatformAdmin, requireRoles('founder' as any)
   } catch (err: any) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// ══════════════════════════════════════════
+// IMPERSONATION — الدخول كتاجر (support, supervisor, director, founder)
+// ══════════════════════════════════════════
+
+// POST /api/admin/impersonate/:merchantId
+router.post('/impersonate/:merchantId', requirePlatformAdmin, requireRoles('support', 'supervisor', 'director'), async (req, res) => {
+  try {
+    const admin = (req as any).admin as AdminPayload;
+    const merchantId = req.params.merchantId;
+
+    // Fetch merchant + tenant
+    const merchant = await queryOne<any>(`
+      SELECT m.id, m.name, m.email, m.role, m.tenant_id,
+        t.name as tenant_name, t.slug as tenant_slug
+      FROM merchants m
+      JOIN tenants t ON m.tenant_id = t.id
+      WHERE m.id = $1
+    `, [merchantId]);
+
+    if (!merchant) {
+      return res.status(404).json({ success: false, error: 'التاجر غير موجود' });
+    }
+
+    // Generate merchant token with impersonation flag
+    const JWT_SECRET_LOCAL = process.env.JWT_SECRET || 'dev-secret-change-me';
+    const impersonationToken = jwt.sign({
+      merchantId: merchant.id,
+      tenantId: merchant.tenant_id,
+      role: merchant.role,
+      email: merchant.email,
+      // Impersonation metadata
+      impersonatedBy: admin.adminId,
+      impersonatorRole: admin.role,
+      impersonatorEmail: admin.email,
+      isImpersonation: true,
+    }, JWT_SECRET_LOCAL, { expiresIn: '2h' });
+
+    // Log impersonation
+    console.log(`🔑 IMPERSONATION: ${admin.email} (${admin.role}) → ${merchant.email} (${merchant.tenant_name})`);
+
+    res.json({
+      success: true,
+      data: {
+        merchant: {
+          id: merchant.id,
+          name: merchant.name,
+          email: merchant.email,
+          role: merchant.role,
+        },
+        tenant: {
+          id: merchant.tenant_id,
+          name: merchant.tenant_name,
+          slug: merchant.tenant_slug,
+        },
+        token: impersonationToken,
+        impersonatedBy: {
+          id: admin.adminId,
+          email: admin.email,
+          role: admin.role,
+        },
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/admin/tenants/:id/merchants — جلب تجار متجر معين (للدعم)
+router.get('/tenants/:id/merchants', requirePlatformAdmin, async (req, res) => {
+  try {
+    const merchants = await query<any>(
+      `SELECT id, name, email, phone, role, status, last_login_at, created_at
+       FROM merchants WHERE tenant_id = $1 ORDER BY role, created_at`,
+      [req.params.id]
+    );
+    res.json({ success: true, data: merchants });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
