@@ -308,6 +308,9 @@ POST /api/auth/refresh
 | `GET` | `/api/store/:slug/products` | ❌ | منتجات المتجر |
 | `GET` | `/api/store/:slug/categories` | ❌ | تصنيفات المتجر |
 | `GET` | `/api/store/:slug/products/:productSlug` | ❌ | تفاصيل منتج |
+| `POST` | `/api/store/:slug/checkout` | ❌ | إنشاء طلب جديد |
+| `POST` | `/api/store/:slug/coupon/validate` | ❌ | التحقق من كوبون |
+| `GET` | `/api/store/:slug/order/:orderNumber` | ❌ | تأكيد الطلب |
 
 ---
 
@@ -374,6 +377,16 @@ SELECT * FROM products WHERE tenant_id = $1;
 ```
 
 ## 📝 سجل التحديثات
+
+### المحادثة ٥ — السلة + Checkout 🛒 (فبراير ٢٠٢٦)
+- ✅ POST /api/store/:slug/checkout — إنشاء طلب (ضيف/مسجل)
+- ✅ التحقق من المنتجات والكميات + تحديث المخزون
+- ✅ إنشاء/تحديث العميل تلقائياً بالجوال
+- ✅ POST /api/store/:slug/coupon/validate — كوبونات (نسبة/مبلغ ثابت)
+- ✅ GET /api/store/:slug/order/:orderNumber — تأكيد الطلب
+- ✅ حساب الشحن: أرامكس (25 QAR) + DHL (35 QAR) + استلام (مجاني)
+- ✅ رقم طلب تسلسلي: SAS-00001
+- ✅ تاريخ حالات الطلب + إحصائيات العملاء
 
 ### المحادثة ٣ب — لوحة تحكم المنصة 🛡️ (فبراير ٢٠٢٦)
 - ✅ جدول platform_admins (auto-created + auto-migrated)
