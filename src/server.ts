@@ -16,6 +16,7 @@ import categoryRoutes from './routes/categories.js';
 import orderRoutes from './routes/orders.js';
 import customerRoutes from './routes/customers.js';
 import storeRoutes from './routes/store.js';
+import adminRoutes from './routes/admin.js';
 import healthRoutes from './routes/health.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/store', storeRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ═══ 404 Handler ═══
 app.use((_req, res) => {
