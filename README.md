@@ -375,6 +375,13 @@ SELECT * FROM products WHERE tenant_id = $1;
 
 ## 📝 سجل التحديثات
 
+### المحادثة ٣ — لوحة التحكم + المنتجات 📦 (فبراير ٢٠٢٦)
+- ✅ Frontend: Sidebar + Topbar تفاعلي
+- ✅ Frontend: لوحة تحكم ديناميكية مربوطة بالـ API
+- ✅ Frontend: CRUD منتجات كامل (قائمة + إضافة + تعديل + حذف)
+- ✅ Frontend: إدارة التصنيفات (inline editing)
+- ✅ Backend APIs مستخدمة: Products + Categories + Orders + Customers
+
 ### المحادثة ٢ — نظام المصادقة 🔐 (فبراير ٢٠٢٦)
 - ✅ `POST /api/auth/register` — تسجيل تاجر + إنشاء متجر + صفحات افتراضية
 - ✅ `POST /api/auth/login` — تسجيل دخول + JWT tokens
@@ -397,8 +404,8 @@ SELECT * FROM products WHERE tenant_id = $1;
 |---|----------|--------|
 | 1 | إعداد المشروع + قاعدة البيانات + API هيكل | ✅ مكتمل |
 | 2 | نظام المصادقة (register/login/JWT) | ✅ مكتمل |
-| 3 | لوحة التحكم + إدارة المنتجات | 🔜 التالي |
-| 4 | واجهة المتجر (Storefront) | ⏳ قادم |
+| 3 | لوحة التحكم + إدارة المنتجات | ✅ مكتمل |
+| 4 | واجهة المتجر (Storefront) | 🔜 التالي |
 | 5-8 | السلة + Checkout + الطلبات + العملاء | ⏳ قادم |
 | 9-11 | الدفع (SADAD/SkipCash) + الشحن (Aramex/DHL) | ⏳ قادم |
 | 12-15 | تقارير + تسويق + إعدادات + ثيمات | ⏳ قادم |
