@@ -16,6 +16,7 @@ import categoryRoutes from './routes/categories.js';
 import orderRoutes from './routes/orders.js';
 import customerRoutes from './routes/customers.js';
 import storeRoutes from './routes/store.js';
+import customerAccountRoutes from './routes/customer-account.js';
 import adminRoutes from './routes/admin.js';
 import healthRoutes from './routes/health.js';
 
@@ -48,6 +49,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/store', storeRoutes);
+app.use('/api/store', customerAccountRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ═══ 404 Handler ═══
