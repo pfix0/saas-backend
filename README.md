@@ -378,6 +378,14 @@ SELECT * FROM products WHERE tenant_id = $1;
 
 ## 📝 سجل التحديثات
 
+### المحادثة ٧ — إدارة العملاء + حساب المستهلك 👥 (فبراير ٢٠٢٦)
+- ✅ GET /api/customers/stats + بحث + ترتيب + تفاصيل + عناوين
+- ✅ PUT /api/customers/:id — تحديث + ملاحظات + حظر/إلغاء
+- ✅ Consumer OTP Auth: send-otp → verify-otp → JWT (30d)
+- ✅ GET/PUT /api/store/:slug/account/me — بياناتي
+- ✅ GET /api/store/:slug/account/orders + /:orderId — طلباتي
+- ✅ CRUD /api/store/:slug/account/addresses — عناويني
+
 ### المحادثة ٦ — إدارة الطلبات 📋 (فبراير ٢٠٢٦)
 - ✅ GET /api/orders/stats — ملخص إحصائي (اليوم، إجمالي، حسب الحالة)
 - ✅ GET /api/orders — بحث (رقم/اسم/جوال) + فلتر تاريخ + ترتيب
