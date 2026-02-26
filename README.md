@@ -378,6 +378,17 @@ SELECT * FROM products WHERE tenant_id = $1;
 
 ## 📝 سجل التحديثات
 
+### محادثة ٨ (الحقيقية) — البحث + المفضلة + التقييمات + الصفحات 🔍 (فبراير ٢٠٢٦)
+- ✅ GET /api/store/:slug/search — بحث فوري مع اقتراحات (debounced)
+- ✅ GET/POST /api/store/:slug/products/:slug/reviews — تقييمات عامة
+- ✅ POST /api/store/:slug/wishlist — toggle مفضلة
+- ✅ GET /api/store/:slug/wishlist/:customerId — قائمة المفضلة
+- ✅ GET /api/store/:slug/pages — صفحات ثابتة (من نحن، الشروط...)
+- ✅ GET/PUT/POST/DELETE /api/reviews — إدارة تقييمات (Admin)
+- ✅ GET/PUT/POST/DELETE /api/pages — إدارة صفحات (Admin)
+- ✅ Migration: reviews + wishlists tables + avg_rating on products
+- ✅ نظام migrations تلقائي عند التشغيل
+
 ### المحادثة ٩ — المالية + الشحن + Checkout ديناميكي 💰 (فبراير ٢٠٢٦)
 - ✅ GET /api/finance/overview — ملخص مالي (إيرادات، محصّل، معلّق، شحن، خصومات)
 - ✅ GET /api/finance/by-payment — تقسيم حسب طريقة الدفع
@@ -471,6 +482,7 @@ SELECT * FROM products WHERE tenant_id = $1;
 | 7 | إدارة العملاء + حساب المستهلك | ✅ مكتمل |
 | 8 | الكوبونات + إعدادات المتجر | ✅ مكتمل |
 | 9 | المالية + الشحن + Checkout ديناميكي | ✅ مكتمل |
+| 8* | البحث + المفضلة + التقييمات + الصفحات | ✅ مكتمل |
 | 10-11 | تكامل بوابات الدفع + الشحن الفعلي | 🔜 التالي |
 | 12-15 | تقارير + تسويق متقدم + ثيمات | ⏳ قادم |
 | 16-18 | الأمان + النشر النهائي + Landing Page | ⏳ قادم |
