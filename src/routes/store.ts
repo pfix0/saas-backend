@@ -124,6 +124,95 @@ router.get('/:slug/products/:productSlug', async (req, res) => {
 });
 
 // ═══════════════════════════════════════
+// GET /api/store/:slug/checkout-options
+// طرق الدفع والشحن المتاحة
+// ═══════════════════════════════════════
+router.get('/:slug/checkout-options', async (req, res) => {
+  try {
+    const tenant = await queryOne(
+      `SELECT id FROM tenants WHERE slug = $1 AND status != 'suspended'`,
+      [req.params.slug]
+    );
+    if (!tenant) return res.status(404).json({ success: false, error: 'المتجر غير موجود' });
+
+    // Get settings
+    const settings = await query(
+      'SELECT key, value FROM store_settings WHERE tenant_id = $1',
+      [tenant.id]
+    );
+    const settingsMap: Record<string, any> = {};
+    settings.forEach((s: any) => {
+      try { settingsMap[s.key] = JSON.parse(s.value); } catch { settingsMap[s.key] = s.value; }
+    });
+
+    const payment = settingsMap.payment || {};
+    const shipping = settingsMap.shipping || {};
+    const checkout = settingsMap.checkout || {};
+
+    // Build available payment methods
+    const paymentMethods: any[] = [];
+    if (payment.cod_enabled !== false) {
+      paymentMethods.push({ key: 'cod', label: 'الدفع عند الاستلام', icon: 'payments' });
+    }
+    if (payment.bank_transfer_enabled) {
+      paymentMethods.push({
+        key: 'bank_transfer', label: 'تحويل بنكي', icon: 'account_balance',
+        details: { bank_name: payment.bank_name, account_name: payment.bank_account_name, iban: payment.bank_iban },
+      });
+    }
+    if (payment.skypay_enabled) {
+      paymentMethods.push({ key: 'skypay', label: 'سكاي باي كاش', icon: 'credit_card' });
+    }
+    if (payment.sadad_enabled) {
+      paymentMethods.push({ key: 'sadad', label: 'سداد', icon: 'credit_card' });
+    }
+
+    // Build available shipping methods
+    const shippingMethods: any[] = [];
+    if (shipping.pickup_enabled !== false) {
+      shippingMethods.push({
+        key: 'pickup', label: 'استلام من المحل', icon: 'store', cost: 0,
+        address: shipping.pickup_address || null,
+      });
+    }
+    if (shipping.aramex_enabled) {
+      shippingMethods.push({
+        key: 'aramex', label: 'أرامكس', icon: 'local_shipping',
+        cost: shipping.aramex_cost || 25,
+      });
+    }
+    if (shipping.dhl_enabled) {
+      shippingMethods.push({
+        key: 'dhl', label: 'DHL', icon: 'flight',
+        cost: shipping.dhl_cost || 35,
+      });
+    }
+
+    // Free shipping
+    const freeShipping = shipping.free_shipping_enabled
+      ? { enabled: true, min: shipping.free_shipping_min || 200 }
+      : { enabled: false, min: 0 };
+
+    res.json({
+      success: true,
+      data: {
+        payment_methods: paymentMethods,
+        shipping_methods: shippingMethods,
+        free_shipping: freeShipping,
+        checkout_settings: {
+          guest_checkout: checkout.guest_checkout !== false,
+          require_address: checkout.require_address !== false,
+          require_email: checkout.require_email || false,
+          delivery_notes: shipping.delivery_notes || null,
+        },
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════
 // POST /api/store/:slug/coupon/validate
 // التحقق من كوبون الخصم
 // ═══════════════════════════════════════
@@ -329,13 +418,30 @@ router.post('/:slug/checkout', async (req, res) => {
       }
     }
 
-    // ═══ 4. Shipping cost ═══
+    // ═══ 4. Shipping cost (from settings) ═══
+    const settingsRows = await query(
+      'SELECT key, value FROM store_settings WHERE tenant_id = $1',
+      [tenant.id]
+    );
+    const storeSettings: Record<string, any> = {};
+    settingsRows.forEach((s: any) => {
+      try { storeSettings[s.key] = JSON.parse(s.value); } catch { storeSettings[s.key] = s.value; }
+    });
+
+    const shipSettings = storeSettings.shipping || {};
+    const checkoutSettings = storeSettings.checkout || {};
+
     const shippingCosts: Record<string, number> = {
-      aramex: 25,
-      dhl: 35,
+      aramex: shipSettings.aramex_cost || 25,
+      dhl: shipSettings.dhl_cost || 35,
       pickup: 0,
     };
-    const shippingCost = shippingCosts[shipping_method] || 0;
+    let shippingCost = shippingCosts[shipping_method] || 0;
+
+    // Free shipping check
+    if (shipSettings.free_shipping_enabled && subtotal >= (shipSettings.free_shipping_min || 200)) {
+      shippingCost = 0;
+    }
 
     // ═══ 5. Total ═══
     const total = subtotal - discountAmount + shippingCost;
@@ -350,7 +456,8 @@ router.post('/:slug/checkout', async (req, res) => {
       const match = lastOrder.order_number.match(/(\d+)$/);
       if (match) nextNum = parseInt(match[1]) + 1;
     }
-    const orderNumber = `SAS-${String(nextNum).padStart(5, '0')}`;
+    const orderPrefix = checkoutSettings.order_prefix || 'SAS';
+    const orderNumber = `${orderPrefix}-${String(nextNum).padStart(5, '0')}`;
 
     // ═══ 7. Create order ═══
     const order = await insert('orders', {
