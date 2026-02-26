@@ -60,9 +60,9 @@ Vercel (Next.js) ──rewrites──→ Railway (Express API) ──→ Postgre
 ```
 saas-backend/
 ├── src/
-│   ├── server.ts               # Express app + startup
+│   ├── server.ts               # Express app + startup + migrations
 │   ├── config/
-│   │   └── database.ts         # PostgreSQL pool + helpers (query, insert, update)
+│   │   └── database.ts         # PostgreSQL pool + helpers
 │   ├── middleware/
 │   │   └── auth.ts             # JWT verify + requireAuth + requireRole + extractTenant
 │   └── routes/
@@ -70,13 +70,25 @@ saas-backend/
 │       ├── products.ts         # CRUD منتجات
 │       ├── categories.ts       # CRUD تصنيفات
 │       ├── orders.ts           # طلبات + تحديث حالة
-│       ├── customers.ts        # عملاء
-│       ├── store.ts            # واجهة المتجر العامة (بدون مصادقة)
+│       ├── customers.ts        # إدارة العملاء
+│       ├── customer-account.ts # حساب المستهلك (OTP)
+│       ├── store.ts            # واجهة المتجر العامة
+│       ├── coupons.ts          # كوبونات الخصم
+│       ├── settings.ts         # إعدادات المتجر
+│       ├── finance.ts          # التقارير المالية
+│       ├── reviews.ts          # التقييمات
+│       ├── pages.ts            # الصفحات الثابتة
+│       ├── payments.ts         # بوابات الدفع (SkipCash/SADAD/COD)
+│       ├── shipments.ts        # شركات الشحن (Aramex/DHL)
+│       ├── admin.ts            # لوحة تحكم المنصة
 │       └── health.ts           # فحص صحة الخدمة
 ├── db/
 │   ├── schema.sql              # ٢٠ جدول كامل
 │   ├── migrate.ts              # تشغيل الـ schema
 │   └── seed.ts                 # بيانات تجريبية
+├── migrations/
+│   ├── 008_reviews_wishlists.sql
+│   └── 010_payment_shipping.sql
 ├── package.json
 ├── tsconfig.json
 ├── railway.toml                # إعدادات النشر
@@ -314,6 +326,35 @@ POST /api/auth/refresh
 
 ---
 
+### 💳 Payments — المدفوعات
+
+| Method | Endpoint | Auth | الوصف |
+|--------|----------|------|-------|
+| `POST` | `/api/payments/initiate` | ❌ | بدء عملية الدفع |
+| `POST` | `/api/payments/callback/skipcash` | ❌ | SkipCash Webhook |
+| `POST` | `/api/payments/callback/sadad` | ❌ | SADAD Webhook |
+| `GET` | `/api/payments/verify/:transactionId` | ❌ | تحقق من حالة الدفع |
+| `GET` | `/api/payments` | 🔓 | قائمة المعاملات |
+| `POST` | `/api/payments/:id/refund` | 🔓 | استرجاع مبلغ |
+| `POST` | `/api/payments/confirm-transfer` | 🔓 | تأكيد تحويل بنكي |
+| `GET` | `/api/payments/stats` | 🔓 | إحصائيات الدفع |
+
+---
+
+### 🚚 Shipments — الشحنات
+
+| Method | Endpoint | Auth | الوصف |
+|--------|----------|------|-------|
+| `POST` | `/api/shipments` | 🔓 | إنشاء شحنة |
+| `GET` | `/api/shipments` | 🔓 | قائمة الشحنات |
+| `GET` | `/api/shipments/:id` | 🔓 | تفاصيل شحنة |
+| `PATCH` | `/api/shipments/:id/status` | 🔓 | تحديث حالة الشحنة |
+| `GET` | `/api/shipments/track/:trackingNumber` | ❌ | تتبع الشحنة (عام) |
+| `POST` | `/api/shipments/calculate-rate` | ❌ | حساب تكلفة الشحن |
+| `GET` | `/api/shipments/stats/overview` | 🔓 | إحصائيات الشحن |
+
+---
+
 ## 🗄️ قاعدة البيانات
 
 ### الجداول (٢٠ جدول)
@@ -377,6 +418,24 @@ SELECT * FROM products WHERE tenant_id = $1;
 ```
 
 ## 📝 سجل التحديثات
+
+### محادثة ١٠-١١ — بوابات الدفع + شركات الشحن 💳🚚 (فبراير ٢٠٢٦)
+- ✅ POST /api/payments/initiate — بدء عملية الدفع (SkipCash/SADAD/COD/Bank Transfer)
+- ✅ POST /api/payments/callback/skipcash — SkipCash Webhook
+- ✅ POST /api/payments/callback/sadad — SADAD Webhook
+- ✅ GET /api/payments/verify/:transactionId — تحقق من حالة الدفع
+- ✅ GET /api/payments — قائمة المعاملات (Dashboard)
+- ✅ POST /api/payments/:id/refund — استرجاع مبلغ
+- ✅ POST /api/payments/confirm-transfer — تأكيد تحويل بنكي
+- ✅ GET /api/payments/stats — إحصائيات الدفع
+- ✅ POST /api/shipments — إنشاء شحنة (Aramex/DHL/Local/Pickup)
+- ✅ GET /api/shipments — قائمة الشحنات + فلاتر
+- ✅ GET /api/shipments/:id — تفاصيل الشحنة
+- ✅ PATCH /api/shipments/:id/status — تحديث حالة الشحنة
+- ✅ GET /api/shipments/track/:trackingNumber — تتبع الشحنة (Public)
+- ✅ POST /api/shipments/calculate-rate — حساب تكلفة الشحن
+- ✅ GET /api/shipments/stats/overview — إحصائيات الشحن
+- ✅ Migration: 010_payment_shipping.sql (indexes + payment_ref)
 
 ### محادثة ٨ (الحقيقية) — البحث + المفضلة + التقييمات + الصفحات 🔍 (فبراير ٢٠٢٦)
 - ✅ GET /api/store/:slug/search — بحث فوري مع اقتراحات (debounced)

@@ -24,6 +24,8 @@ import financeRoutes from './routes/finance.js';
 import healthRoutes from './routes/health.js';
 import reviewRoutes from './routes/reviews.js';
 import pageRoutes from './routes/pages.js';
+import paymentRoutes from './routes/payments.js';
+import shipmentRoutes from './routes/shipments.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4000');
@@ -60,6 +62,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/pages', pageRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/shipments', shipmentRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ═══ 404 Handler ═══
